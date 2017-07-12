@@ -1,25 +1,12 @@
 ---
 layout: default
-title: Think Tanks
+title: Google Sheets to Github Website
 ---
 
-<!-- Think Tanks -->
-{% assign thinktanks = site.data.thinktanks %}
-{% assign thinktanks = thinktanks | sort:"Name" %}
+<!-- Links -->
+{% assign links = site.data.links %}
+{% assign links = links | sort:"Name" %}
 
-<!-- Document -->
+{% for link in links %}
 
-{% for thinktank in thinktanks %}
-
-<p><strong><u>{{ thinktank.Name }}</u></strong>: {{ thinktank.Location }} (<a href="{{ thinktank.URL }}">{{ thinktank.URL }}</a>) </p>
-
-<p>Political Orientation: {{ thinktank.Orientation }}</p>
-
-<p>Policy Focus: {{ thinktank.Focus }}</p>
-
-<p>Prominent Funders: {{ thinktank.Funders }}</p>
-
-<p>Notable Figures: {{ thinktank.Figures }}</p>
-
-<hr >
 {% endfor %}

@@ -1,0 +1,162 @@
+---
+layout: default
+---
+
+<article class="post">
+  <section class="post-content">
+  <a name="topofpage"></a>
+
+   <h2>Google Sheets to Github Jekyll YAML</h2>
+   <p>This script pulls from the spreadsheet that is specified and writes its content to the underlying _data folder.</p>
+
+    <!--These are JavaScript Libraries-->
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/utility.js"></script>
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/cookies.js"></script>
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/tabletop.js"></script>
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/js-yaml.min.js"></script>
+    <script type="text/javascript" src="https://contrafabulists-toolbox.github.io/master/javascript/github.js"></script>
+
+    <script type="text/javascript">
+
+        // Reset the cookie manually
+        //Cookies.expire('token');
+        var $yaml_store = "";
+        var $key = getUrlVar('key');
+        var $resource = getUrlVar('worksheet');
+        var $oAuthToken = getUrlVar('token');
+        var $org = getUrlVar('org');
+        var $repo = getUrlVar('repo');
+        var $branch = getUrlVar('branch');
+        var $page = getUrlVar('page');
+
+        if($page=='')
+          {
+          $page = 30;
+          }
+
+        if($oAuthToken !='')
+          {
+          // Setting a cookie value
+          Cookies.set('token', $oAuthToken);
+          // Set with expiration
+          // Cookies.set('token', $oAuthToken, { expires: '01/01/2017' });
+          }
+
+        // Grab the token from cookie
+        $oAuthToken = Cookies.get('token');
+        $(document).ready( function() {
+          Tabletop.init( { key: $key,
+                           callback: showInfo,
+                           wanted: [ $resource ],
+                           debug: false } )
+        })
+
+        //console.log($resource);
+
+        function showInfo(data, tabletop)
+          {
+
+          $data = new Array();
+          $("#table_info").text("We found the tables " + tabletop.model_names.join(", "));
+          $.each( tabletop.sheets(), function(i, sheet) {
+            $("#table_info").append("<p>" + sheet.name + " has " + sheet.column_names.join(", ") + "</p>");
+          });
+          $product = tabletop.sheets($resource).all();
+
+          // Grab the token from cookie
+          $oAuthToken = Cookies.get('token');
+
+          var github = new Github({token: $oAuthToken,auth: "oauth"});
+
+          $count = 30;
+
+          $total_count = $product.length;
+
+          $where = $count - $total_count;
+
+          if($where == $page)
+            {
+            // Display we are leaving...
+            $("#result").append("<p>Everything should be built!</p>");
+            }
+
+          $.each( tabletop.sheets($resource).all(), function(i, data) {
+
+              //console.log($count + ' = ' + $page);
+
+              if($count == $page)
+                {
+
+                $slug = data['slug'];
+                $title = data['title'];
+                $description = data['description'];
+                $link1label = data['link-1-label'];
+                $link1url = data['link-1-url'];
+                $link2label = data['link-2-label'];
+                $link2url = data['link-2-url'];
+                $image = data['image'];
+                $video = data['video'];
+                $audio = data['audio'];
+                $help = data['help'];
+
+                var $d = new Date();
+                var $m = $d.getMonth();
+                var $y = $d.getYear();
+
+                if($count < 10)
+                  {
+                  $count2 = '0' + $count;
+                  }
+                else
+                  {
+                  $count2 = $count;
+                  }
+
+                $writebody = "---\r\n"
+                $writebody = $writebody + "slug: '" + $slug + "'\r\n";
+                $writebody = $writebody + "title: '" + $title + "'\r\n";
+                $writebody = $writebody + "link-1-label: '" + $link1label + "'\r\n";
+                $writebody = $writebody + "link-1-url: '" + $link1url + "'\r\n";
+                $writebody = $writebody + "link-2-label: '" + $link2label + "'\r\n";
+                $writebody = $writebody + "link-2-url: '" + $link2url + "'\r\n";
+                $writebody = $writebody + "image: '" + $image + "'\r\n";
+                $writebody = $writebody + "video: '" + $video + "'\r\n";
+                $writebody = $writebody + "audio: '" + $audio + "'\r\n";
+                $writebody = $writebody + "help: '" + $help + "'\r\n";
+                $writebody = $writebody + "date: '" + $y + "-" + $m + "-" + $count2 + "T01:01:00-01:00'\r\n";
+                $writebody = $writebody + "---\r\n"
+                $writebody = $writebody + $description + "\r\n";
+                $writepath = "_posts/2017-07-" + $count2 + "-" + $slug + ".markdown";
+
+                // display we are writing
+                $("#result").append("<p>Writing " + $writepath + " to the Github Repo...</p>");
+
+                var github = new Github({token: $oAuthToken,auth: "oauth"});
+                var repo = github.getRepo($org,$repo);
+                repo.write('master',$writepath, $writebody, 'Save', function(err){
+
+                  // Display we are leaving...
+                  $("#result").append("<p>We have another page to build, and need to load page...</p>");
+
+                  $page = $page - 1;
+                  $url = 'https://contrafabulists-toolbox.github.io/google-sheets-to-github-jekyll-yaml-manager/pull-sheet/?token=' + $oAuthToken + '&key=' + $key + '&worksheet=' + $resource + '&org=' + $org + '&repo=' + $repo + '&branch=' + $branch + '&page=' + $page;
+                  //console.log("URL:" + $url);
+                  location.href = $url;
+
+                  });
+                github = null;
+                repo = null;
+
+              }
+
+            $count--;
+
+          });
+        }
+    </script>
+
+    <div id="result" style="padding: 25px;"></div>
+
+  </section>
+</article>
